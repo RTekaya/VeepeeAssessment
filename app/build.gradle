@@ -27,7 +27,9 @@ android {
             minifyEnabled true
         }
     }
-
+    packagingOptions {
+        exclude 'META-INF/proguard/coroutines.pro'
+    }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -36,6 +38,26 @@ android {
     dataBinding {
         enabled = true
     }
+
+    configurations.all {
+        resolutionStrategy {
+            resolutionStrategy.eachDependency { details ->
+                if (details.requested.group == 'androidx.fragment') {
+                    details.useVersion "1.2.0"
+                }
+                if (details.requested.group == 'androidx.lifecycle') {
+                    details.useVersion "2.2.0"
+                }
+                if (details.requested.group == 'androidx.core') {
+                    details.useVersion "1.1.0"
+                }
+                if (details.requested.group == 'androidx.versionedparcelable') {
+                    details.useVersion "1.1.0"
+                }
+            }
+        }
+    }
+
 }
 
 dependencies {

@@ -1,17 +1,9 @@
 package com.vp.list;
 
-import androidx.lifecycle.ViewModelProvider;
-import androidx.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
-import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,14 +11,26 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.ViewAnimator;
 
-import com.vp.list.viewmodel.SearchResult;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.lifecycle.ViewModelProviders;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.vp.list.viewmodel.ListViewModel;
+import com.vp.list.viewmodel.SearchResult;
 
 import javax.inject.Inject;
 
 import dagger.android.support.AndroidSupportInjection;
 
-public class ListFragment extends Fragment implements GridPagingScrollListener.LoadMoreItemsListener, ListAdapter.OnItemClickListener {
+public class ListFragment extends Fragment implements GridPagingScrollListener.LoadMoreItemsListener,
+        ListAdapter.OnItemClickListener,
+        SwipeRefreshLayout.OnRefreshListener {
     public static final String TAG = "ListFragment";
     private static final String CURRENT_QUERY = "current_query";
 
@@ -40,7 +44,9 @@ public class ListFragment extends Fragment implements GridPagingScrollListener.L
     private RecyclerView recyclerView;
     private ProgressBar progressBar;
     private TextView errorTextView;
+
     private String currentQuery = "Interview";
+    private SwipeRefreshLayout swipeRefresh;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -62,13 +68,14 @@ public class ListFragment extends Fragment implements GridPagingScrollListener.L
         viewAnimator = view.findViewById(R.id.viewAnimator);
         progressBar = view.findViewById(R.id.progressBar);
         errorTextView = view.findViewById(R.id.errorText);
-
+        swipeRefresh = view.findViewById(R.id.swipe_refresh);
         if (savedInstanceState != null) {
             currentQuery = savedInstanceState.getString(CURRENT_QUERY);
         }
 
         initBottomNavigation(view);
         initList();
+        swipeRefresh.setOnRefreshListener(this);
         listViewModel.observeMovies().observe(this, searchResult -> {
             if (searchResult != null) {
                 handleResult(listAdapter, searchResult);
@@ -110,7 +117,7 @@ public class ListFragment extends Fragment implements GridPagingScrollListener.L
     }
 
     private void showList() {
-        viewAnimator.setDisplayedChild(viewAnimator.indexOfChild(recyclerView));
+        viewAnimator.setDisplayedChild(viewAnimator.indexOfChild(swipeRefresh));
     }
 
     private void showError() {
@@ -164,6 +171,16 @@ public class ListFragment extends Fragment implements GridPagingScrollListener.L
 
     @Override
     public void onItemClick(String imdbID) {
-        //TODO handle click events
+        Uri uri = Uri.parse("app://movies/detail?imdbID=" + imdbID);
+        Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+        intent.setPackage(requireContext().getPackageName());
+        startActivity(intent);
+    }
+
+    @Override
+    public void onRefresh() {
+        swipeRefresh.setRefreshing(false);
+        listViewModel.searchMoviesByTitle(currentQuery, 1);
     }
 }
+

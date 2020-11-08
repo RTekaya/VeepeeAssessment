@@ -25,6 +25,21 @@ public class ListViewModelTest {
     public InstantTaskExecutorRule instantTaskRule = new InstantTaskExecutorRule();
 
     @Test
+    public void shouldReturnLoadedState() {
+        //given
+        SearchService searchService = mock(SearchService.class);
+        when(searchService.search(anyString(), anyInt())).thenReturn(Calls.response(mock(SearchResponse.class)));
+        ListViewModel listViewModel = new ListViewModel(searchService);
+        Observer<SearchResult> mockObserver = mock(Observer.class);
+        listViewModel.observeMovies().observeForever(mockObserver);
+        //when
+        listViewModel.searchMoviesByTitle("title", 1);
+
+        //then
+        assertThat(listViewModel.observeMovies().getValue().getListState()).isEqualTo(ListState.LOADED);
+    }
+
+    @Test
     public void shouldReturnErrorState() {
         //given
         SearchService searchService = mock(SearchService.class);
